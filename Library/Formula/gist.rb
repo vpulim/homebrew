@@ -7,7 +7,6 @@ class Gist <Formula
   md5 '61ada08a5871b7011c1682be38e51da1'
 
   def install
-    mv 'gist.rb', 'gist'
-    bin.install "gist"
+    bin.install 'gist.rb' => 'gist'
   end
 end
