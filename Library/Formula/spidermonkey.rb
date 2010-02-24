@@ -1,47 +1,25 @@
 require 'formula'
 
-class Spidermonkey <Formula  
-  # There are no proper releases of spidermonkey. So pick a specific/constant
-  # revision:  r35345
-  url 'http://hg.mozilla.org/tracemonkey/archive/57a6ad20eae9.tar.gz'
-  md5 '4a143399f69d6509bd980073096af6d4'
+class Spidermonkey <Formula
+  url 'http://hg.mozilla.org/mozilla-central/archive/ddfecbc93934.tar.gz'
+  md5 'bff7b9a466516c8ab80cf8ee0170735d'
 
-  version '1.9.2'
+  version '1.9.3'
 
   homepage 'https://developer.mozilla.org/en/SpiderMonkey'
 
-  head 'hg://http://hg.mozilla.org/tracemonkey'
+  head 'hg://http://hg.mozilla.org/mozilla-central'
 
   depends_on 'readline'
   depends_on 'nspr'
 
+  # !!! spidermonkey will only build with autoconf 2.13
+  depends_on 'autoconf213' 
+
   def install
-    if MACOS_VERSION == 10.5
-      # aparently this flag causes the build to fail for ivanvc on 10.5 with a
-      # penryn (core 2 duo) CPU. So lets be cautious here and remove it.
-      # It might not be need with newer spidermonkeys anymore tho.
-      ENV['CFLAGS'] = ENV['CFLAGS'].gsub(/-msse[^\s]+/, '')
-    end
-
-    # For some reason SpiderMonkey requires Autoconf-2.13
-    ac213_prefix = Pathname.pwd.join('ac213').to_s
-    Autoconf213.new.brew do |f|
-      # probably no longer required, see issue #751
-      inreplace 'configure', 'for ac_prog in mawk gawk nawk awk', 'for ac_prog in awk'
-
-      system "./configure", "--disable-debug", 
-                            "--program-suffix=213",
-                            "--prefix=#{ac213_prefix}"
-      system "make install"
-    end
 
     Dir.chdir "js/src" do
-      # Fixes a bug with linking against CoreFoundation. Tests all pass after
-      # building like this. See: http://openradar.appspot.com/7209349
-      inreplace "configure.in", "LDFLAGS=\"$LDFLAGS -framework Cocoa\"", ""
-      system "#{ac213_prefix}/bin/autoconf213"
-      # Remove the broken *(for anyone but FF) install_name
-      inreplace "config/rules.mk", "-install_name @executable_path/$(SHARED_LIBRARY) ", ""
+      system "autoconf213"
     end
 
     FileUtils.mkdir "brew-build";
@@ -54,7 +32,6 @@ class Spidermonkey <Formula
 
       inreplace "js-config", /JS_CONFIG_LIBS=.*?$/, "JS_CONFIG_LIBS=''"
 
-      # Can't do `make install` right off the bat sadly
       system "make"
       system "make install"
 
